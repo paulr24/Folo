@@ -4,6 +4,7 @@
   "private": true,
   "main": "src/main.tsx",
   "scripts": {
+    "postinstall": "bash ./scripts/setup-build.sh || true",
     "android": "expo run:android",
     "bump": "vv",
     "dev": "npm run start",

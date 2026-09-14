@@ -2,6 +2,8 @@ import { MemoedDangerousHTMLStyle } from "@follow/components/common/MemoedDanger
 import { Checkbox } from "@follow/components/ui/checkbox/index.jsx"
 import type { SpotlightRule } from "@follow/shared/spotlight"
 import { parseHtml as parseHtmlGeneral } from "@follow/utils/html"
+import { clsx } from "clsx"
+import type { Element, Parent } from "hast"
 import type { Components } from "hast-util-to-jsx-runtime"
 import { createElement } from "react"
 import { renderToString } from "react-dom/server"
@@ -17,6 +19,44 @@ const renderStyleTag: Components["style"] = ({ node, ...props }) => {
     return createElement(MemoedDangerousHTMLStyle, null, props.children)
   }
   return null
+}
+
+const sanitizeResponsiveLayout = (tree: Parent) => {
+  if (!Array.isArray(tree.children)) return
+
+  for (const child of tree.children) {
+    if (child.type !== "element") continue
+
+    const element = child as Element
+    const tagName = element.tagName
+
+    if (["table", "td", "th", "div"].includes(tagName)) {
+      if (element.properties) {
+        // Strip fixed desktop width attributes (e.g. width="600") that cause horizontal overflow
+        const widthProp = element.properties.width
+        if (typeof widthProp === "number" && widthProp > 300) {
+          delete element.properties.width
+        } else if (
+          typeof widthProp === "string" &&
+          !widthProp.endsWith("%") &&
+          parseInt(widthProp, 10) > 300
+        ) {
+          delete element.properties.width
+        }
+
+        // Clean fixed desktop width / min-width inline styles from newsletter templates
+        const style = element.properties.style
+        if (typeof style === "string") {
+          const cleanedStyle = style
+            .replace(/\bmin-width\s*:\s*[^;]+;?/gi, "")
+            .replace(/\bwidth\s*:\s*(\d{3,}|[4-9]\d)px\s*;?/gi, "")
+          element.properties.style = cleanedStyle
+        }
+      }
+    }
+
+    sanitizeResponsiveLayout(element)
+  }
 }
 
 export const parseHtml = (
@@ -35,6 +75,7 @@ export const parseHtml = (
     ...options,
     hastTransform: (tree) => {
       applySpotlightToHtmlRendererTree(tree, spotlightRules)
+      sanitizeResponsiveLayout(tree)
     },
     components: {
       a: ({ node, ...props }) => {
@@ -172,9 +213,19 @@ export const parseHtml = (
 
           createElement("table", {
             ...props,
-            className: "w-full my-0",
+            className: clsx(props.className, "w-full my-0 max-w-full"),
           }),
         ),
+      td: ({ node, ...props }) =>
+        createElement("td", {
+          ...props,
+          className: clsx(props.className, "max-w-full break-words"),
+        }),
+      th: ({ node, ...props }) =>
+        createElement("th", {
+          ...props,
+          className: clsx(props.className, "max-w-full break-words"),
+        }),
       video: ({ node, ...props }) =>
         createElement("video", {
           ...props,

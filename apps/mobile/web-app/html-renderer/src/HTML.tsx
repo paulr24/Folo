@@ -80,6 +80,7 @@ export const HTML = <A extends keyof React.JSX.IntrinsicElements = "div">(props:
             style: {
               width: "100%",
               maxWidth: "100%",
+              overflowX: "hidden",
               ...rest.style,
             },
             className: clsx(

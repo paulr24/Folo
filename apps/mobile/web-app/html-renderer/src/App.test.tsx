@@ -62,3 +62,27 @@ describe("entry cover image", () => {
     expect(article).toBeNull()
   })
 })
+
+describe("newsletter responsive rendering", () => {
+  test("strips fixed desktop width attributes and min-width styles from tables and cells", () => {
+    const article = renderEntry({
+      content:
+        '<table width="600" style="width: 600px; min-width: 600px;"><tr><td width="600" style="width: 600px;"><p>Newsletter text</p></td></tr></table>',
+    })
+
+    const table = article?.querySelector("table")
+    const td = article?.querySelector("td")
+
+    expect(table).not.toBeNull()
+    expect(table?.getAttribute("width")).toBeNull()
+    expect(table?.getAttribute("style") || "").not.toContain("min-width")
+    expect(table?.getAttribute("style") || "").not.toContain("600px")
+    expect(table?.className).toContain("max-w-full")
+
+    expect(td).not.toBeNull()
+    expect(td?.getAttribute("width")).toBeNull()
+    expect(td?.getAttribute("style") || "").not.toContain("600px")
+    expect(td?.className).toContain("break-words")
+  })
+})
+

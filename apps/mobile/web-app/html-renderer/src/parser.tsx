@@ -14,9 +14,18 @@ import { Math } from "./components/math"
 import { ShikiHighLighter } from "./components/shiki"
 import { applySpotlightToHtmlRendererTree } from "./spotlight"
 
+const sanitizeCss = (css: string): string => {
+  return css
+    .replace(/\bmin-width\s*:\s*[^;!}]+(!important)?/gi, "min-width: 0 !important")
+    .replace(/\bwidth\s*:\s*(?:[2-9]\d{2,}|\d{4,})px\s*(!important)?/gi, "width: 100% !important; max-width: 100% !important")
+    .replace(/\bwidth\s*:\s*(?:[1-9]\d{2,}|\d{4,})pt\s*(!important)?/gi, "width: 100% !important; max-width: 100% !important")
+    .replace(/\bwhite-space\s*:\s*nowrap\s*(!important)?/gi, "white-space: normal !important")
+    .replace(/\btable-layout\s*:\s*auto\s*(!important)?/gi, "table-layout: fixed !important")
+}
+
 const renderStyleTag: Components["style"] = ({ node, ...props }) => {
   if (typeof props.children === "string") {
-    return createElement(MemoedDangerousHTMLStyle, null, props.children)
+    return createElement(MemoedDangerousHTMLStyle, null, sanitizeCss(props.children))
   }
   return null
 }
@@ -28,30 +37,21 @@ const sanitizeResponsiveLayout = (tree: Parent) => {
     if (child.type !== "element") continue
 
     const element = child as Element
-    const tagName = element.tagName
 
-    if (["table", "td", "th", "div"].includes(tagName)) {
-      if (element.properties) {
-        // Strip fixed desktop width attributes (e.g. width="600") that cause horizontal overflow
-        const widthProp = element.properties.width
-        if (typeof widthProp === "number" && widthProp > 300) {
-          delete element.properties.width
-        } else if (
-          typeof widthProp === "string" &&
-          !widthProp.endsWith("%") &&
-          parseInt(widthProp, 10) > 300
-        ) {
-          delete element.properties.width
-        }
+    if (element.properties) {
+      const widthProp = element.properties.width
+      if (typeof widthProp === "number" && widthProp > 200) {
+        delete element.properties.width
+      } else if (
+        typeof widthProp === "string" &&
+        (!widthProp.endsWith("%") || parseInt(widthProp, 10) > 100)
+      ) {
+        delete element.properties.width
+      }
 
-        // Clean fixed desktop width / min-width inline styles from newsletter templates
-        const style = element.properties.style
-        if (typeof style === "string") {
-          const cleanedStyle = style
-            .replace(/\bmin-width\s*:\s*[^;]+;?/gi, "")
-            .replace(/\bwidth\s*:\s*(\d{3,}|[4-9]\d)px\s*;?/gi, "")
-          element.properties.style = cleanedStyle
-        }
+      const style = element.properties.style
+      if (typeof style === "string") {
+        element.properties.style = sanitizeCss(style)
       }
     }
 
@@ -208,23 +208,47 @@ export const parseHtml = (
         createElement(
           "div",
           {
-            className: "w-full overflow-x-auto",
+            className: "w-full max-w-full overflow-x-hidden",
+            style: { width: "100%", maxWidth: "100%", overflowX: "hidden" },
           },
 
           createElement("table", {
             ...props,
             className: clsx(props.className, "w-full my-0 max-w-full"),
+            style: {
+              width: "100%",
+              maxWidth: "100%",
+              tableLayout: "fixed",
+              borderCollapse: "collapse",
+              wordBreak: "break-word",
+              overflowWrap: "anywhere",
+              ...(props as any).style,
+            },
           }),
         ),
       td: ({ node, ...props }) =>
         createElement("td", {
           ...props,
           className: clsx(props.className, "max-w-full break-words"),
+          style: {
+            maxWidth: "100%",
+            wordBreak: "break-word",
+            overflowWrap: "anywhere",
+            whiteSpace: "normal",
+            ...(props as any).style,
+          },
         }),
       th: ({ node, ...props }) =>
         createElement("th", {
           ...props,
           className: clsx(props.className, "max-w-full break-words"),
+          style: {
+            maxWidth: "100%",
+            wordBreak: "break-word",
+            overflowWrap: "anywhere",
+            whiteSpace: "normal",
+            ...(props as any).style,
+          },
         }),
       video: ({ node, ...props }) =>
         createElement("video", {

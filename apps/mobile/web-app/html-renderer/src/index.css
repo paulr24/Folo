@@ -21,19 +21,55 @@ body {
 }
 
 /* Force email newsletter tables, cells, and containers to be responsive on mobile */
-table {
+body *:not(pre):not(pre *):not(code):not(.shiki):not(.shiki *) {
   max-width: 100% !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+pre, .shiki {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+}
+
+html body #root article table,
+html body #root table,
+body table {
   width: 100% !important;
-}
-
-td,
-th {
   max-width: 100% !important;
-  word-break: break-word;
-  overflow-wrap: anywhere;
+  min-width: 0 !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+  box-sizing: border-box !important;
 }
 
-/* Override hardcoded desktop width attributes from email newsletter templates */
+html body #root article td,
+html body #root article th,
+html body #root td,
+html body #root th,
+body td,
+body th {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  white-space: normal !important;
+  box-sizing: border-box !important;
+}
+
+html body #root article div,
+html body #root article p,
+html body #root article span,
+html body #root article center,
+html body #root article section,
+html body #root article a {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  box-sizing: border-box !important;
+}
+
 table[width],
 td[width],
 th[width],
@@ -41,10 +77,14 @@ div[width] {
   max-width: 100% !important;
 }
 
-img,
-video,
-iframe {
+html body #root img,
+html body #root video,
+html body #root iframe,
+body img,
+body video,
+body iframe {
   max-width: 100% !important;
-  height: auto;
+  height: auto !important;
+  box-sizing: border-box !important;
 }
 

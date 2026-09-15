@@ -65,6 +65,8 @@ export const NativeWebView: React.ComponentType<
       allowsBackForwardNavigationGestures
       allowsFullscreenVideo
       injectedJavaScriptBeforeContentLoaded={atStart}
+      showsHorizontalScrollIndicator={false}
+      overScrollMode="never"
       // setSupportMultipleWindows={false}
       onOpenWindow={(e) => {
         const { targetUrl } = e.nativeEvent
